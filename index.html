@@ -1,1 +1,119 @@
-aaa
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>単語暗記アプリ</title>
+<style>
+body {
+    font-family: sans-serif;
+    text-align: center;
+    background: #f4f6f9;
+}
+.container {
+    background: white;
+    padding: 20px;
+    margin: 30px auto;
+    width: 360px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+input, button {
+    margin: 5px;
+    padding: 8px;
+}
+.correct { color: green; }
+.wrong { color: red; }
+</style>
+</head>
+<body>
+
+<div class="container">
+<h2>📚 単語登録</h2>
+<input type="text" id="word" placeholder="単語">
+<input type="text" id="meaning" placeholder="意味">
+<button onclick="addWord()">追加</button>
+
+<hr>
+
+<h2>📝 クイズ</h2>
+<div id="question">単語を登録してください</div>
+<input type="text" id="answer" placeholder="意味を入力">
+<br>
+<button onclick="checkAnswer()">答える</button>
+<button onclick="nextQuestion()">通常出題</button>
+<button onclick="reviewMode()">復習モード</button>
+
+<p id="result"></p>
+<p>正解数: <span id="score">0</span></p>
+</div>
+
+<script>
+let words = JSON.parse(localStorage.getItem("words")) || [];
+let wrongWords = JSON.parse(localStorage.getItem("wrongWords")) || [];
+let current = null;
+let score = 0;
+
+function saveData() {
+    localStorage.setItem("words", JSON.stringify(words));
+    localStorage.setItem("wrongWords", JSON.stringify(wrongWords));
+}
+
+function addWord() {
+    const word = document.getElementById("word").value;
+    const meaning = document.getElementById("meaning").value;
+    if(word && meaning){
+        words.push({word, meaning});
+        saveData();
+        alert("追加しました！");
+        document.getElementById("word").value = "";
+        document.getElementById("meaning").value = "";
+    }
+}
+
+function nextQuestion() {
+    if(words.length === 0){
+        document.getElementById("question").innerText = "単語を登録してください";
+        return;
+    }
+    current = words[Math.floor(Math.random() * words.length)];
+    document.getElementById("question").innerText = current.word;
+    document.getElementById("result").innerText = "";
+    document.getElementById("answer").value = "";
+}
+
+function reviewMode() {
+    if(wrongWords.length === 0){
+        alert("復習する単語がありません！");
+        return;
+    }
+    current = wrongWords[Math.floor(Math.random() * wrongWords.length)];
+    document.getElementById("question").innerText = current.word + "（復習）";
+    document.getElementById("result").innerText = "";
+    document.getElementById("answer").value = "";
+}
+
+function checkAnswer() {
+    const answer = document.getElementById("answer").value;
+    if(!current) return;
+
+    if(answer === current.meaning){
+        document.getElementById("result").innerHTML = "<span class='correct'>正解！</span>";
+        score++;
+        // 復習リストから削除
+        wrongWords = wrongWords.filter(w => w.word !== current.word);
+    } else {
+        document.getElementById("result").innerHTML =
+            "<span class='wrong'>不正解！ 正解は: " + current.meaning + "</span>";
+        // 間違えた単語を復習リストに追加（重複防止）
+        if(!wrongWords.some(w => w.word === current.word)){
+            wrongWords.push(current);
+        }
+    }
+
+    saveData();
+    document.getElementById("score").innerText = score;
+}
+</script>
+
+</body>
+</html>
